@@ -31,25 +31,26 @@ class NGramModel:
         return text.split()
     
     def train_from_file(self, file_path, limit=None):
+        from collections import defaultdict, Counter
+
         self.ngrams = defaultdict(Counter)
         self.context_counts = Counter()
 
         with open(file_path, "r", encoding="utf-8") as f:
-            for i, line in enumerate(f):
-                if limit and i > limit:
-                    break
+            text = f.read()   # 🔥 read FULL text
 
-                tokens = self.preprocess(line)
+        tokens = self.preprocess(text)
 
-                for j in range(len(tokens) - self.n + 1):
-                    context = tuple(tokens[j:j+self.n-1])
-                    word = tokens[j+self.n-1]
+        for i in range(len(tokens) - self.n + 1):
+            context = tuple(tokens[i:i+self.n-1])
+            word = tokens[i+self.n-1]
 
-                    self.ngrams[context][word] += 1
-                    self.context_counts[context] += 1
+            self.ngrams[context][word] += 1
+            self.context_counts[context] += 1
 
-                if i % 1000 == 0:
-                    print(f"Processed {i} lines...")
+            if i % 10000 == 0:
+                print(f"Processed {i} tokens...")
+        print("Total contexts learned:", len(self.ngrams))
 
     def save(self, path="model.pkl"):
         with open(path, "wb") as f:
@@ -75,13 +76,19 @@ class NGramModel:
 # Load model
 model = NGramModel(3)
 
-if os.path.exists("model.pkl"):
-    model.load("model.pkl")
-else:
-    download_dataset()
-    print("Training model...")
-    model.train_from_file("dataset.txt", limit=20000)  # limit for speed
-    model.save("model.pkl")
+# 🔥 FORCE retrain
+download_dataset()
+print("Training model...")
+model.train_from_file("dataset.txt", limit=20000)
+model.save("model.pkl")
+
+# if os.path.exists("model.pkl"):
+#     model.load("model.pkl")
+# else:
+#     download_dataset()
+#     print("Training model...")
+#     model.train_from_file("dataset.txt", limit=20000)  # limit for speed
+#     model.save("model.pkl")
 
 @app.route("/")
 def home():
