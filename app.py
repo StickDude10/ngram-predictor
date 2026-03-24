@@ -5,17 +5,25 @@ import requests
 from collections import defaultdict, Counter
 from flask import Flask, render_template, request, jsonify
 
-DATASET_URL = "https://drive.google.com/uc?id=1SHZfN7G9WbPdapie-vUEbygIZH7Q9n4f"
+DATASET_URL = "https://limewire.com/d/j7beL#dKTbYNCOOW"
 
 app = Flask(__name__)
 
 def download_dataset():
-        if not os.path.exists("dataset.txt"):
-            print("Downloading dataset...")
-            r = requests.get(DATASET_URL)
-            with open("dataset.txt", "wb") as f:
-                f.write(r.content)
-            print("Download complete.")
+    if not os.path.exists("dataset.txt"):
+        print("Downloading dataset...")
+
+        URL = DATASET_URL
+        session = requests.Session()
+
+        response = session.get(URL, stream=True)
+
+        with open("dataset.txt", "wb") as f:
+            for chunk in response.iter_content(1024 * 1024):
+                if chunk:
+                    f.write(chunk)
+
+        print("Download complete.")
 
 class NGramModel:
     def __init__(self, n=3):
@@ -78,6 +86,9 @@ model = NGramModel(3)
 
 # 🔥 FORCE retrain
 download_dataset()
+with open("dataset.txt", "r", encoding="utf-8", errors="ignore") as f:
+    sample = f.read(500)
+    print("DATA SAMPLE:", sample[:200])
 print("Training model...")
 model.train_from_file("dataset.txt", limit=20000)
 model.save("model.pkl")
