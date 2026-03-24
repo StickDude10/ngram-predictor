@@ -2,6 +2,7 @@ import os
 import re
 import pickle
 import requests
+from collections import defaultdict, Counter
 from flask import Flask, render_template, request, jsonify
 
 DATASET_URL = "https://drive.google.com/uc?id=1SHZfN7G9WbPdapie-vUEbygIZH7Q9n4f"
@@ -28,6 +29,31 @@ class NGramModel:
         text = text.lower()
         text = re.sub(r"[^\w\s]", "", text)
         return text.split()
+    
+    def train_from_file(self, file_path, limit=None):
+        self.ngrams = defaultdict(Counter)
+        self.context_counts = Counter()
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                if limit and i > limit:
+                    break
+
+                tokens = self.preprocess(line)
+
+                for j in range(len(tokens) - self.n + 1):
+                    context = tuple(tokens[j:j+self.n-1])
+                    word = tokens[j+self.n-1]
+
+                    self.ngrams[context][word] += 1
+                    self.context_counts[context] += 1
+
+                if i % 1000 == 0:
+                    print(f"Processed {i} lines...")
+
+    def save(self, path="model.pkl"):
+        with open(path, "wb") as f:
+            pickle.dump((self.ngrams, self.context_counts), f)
 
     def predict(self, text, top_k=5):
         tokens = self.preprocess(text)
