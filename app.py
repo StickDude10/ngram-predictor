@@ -1,7 +1,5 @@
-import os
 import re
 import pickle
-import requests
 from collections import defaultdict, Counter
 from flask import Flask, render_template, request, jsonify
 
@@ -19,7 +17,7 @@ class NGramModel:
 
     def preprocess(self, text):
         text = text.lower()
-        text = re.sub(r"[^\w\s]", "", text)
+        text = re.sub(r"[^a-zA-Z\s]", "", text)
         return text.split()
     
     def train_from_file(self, file_path):
@@ -71,14 +69,14 @@ with open(DATASET_PATH, "r", encoding="utf-8", errors="ignore") as f:
     sample = f.read(500)
     print("DATA SAMPLE:", sample[:200])
 print("Training model...")
-model.train_from_file(DATASET_PATH, limit=20000)
+model.train_from_file(DATASET_PATH)
 model.save("model.pkl")
 
 # if os.path.exists("model.pkl"):
 #     model.load("model.pkl")
 # else:
 #     print("Training model...")
-#     model.train_from_file(DATASET_PATH, limit=20000)  # limit for speed
+#     model.train_from_file(DATASET_PATH)  # limit for speed
 #     model.save("model.pkl")
 
 @app.route("/")
