@@ -5,25 +5,9 @@ import requests
 from collections import defaultdict, Counter
 from flask import Flask, render_template, request, jsonify
 
-DATASET_URL = "https://limewire.com/d/j7beL#dKTbYNCOOW"
+DATASET_PATH = "dataset.txt"
 
 app = Flask(__name__)
-
-def download_dataset():
-    if not os.path.exists("dataset.txt"):
-        print("Downloading dataset...")
-
-        URL = DATASET_URL
-        session = requests.Session()
-
-        response = session.get(URL, stream=True)
-
-        with open("dataset.txt", "wb") as f:
-            for chunk in response.iter_content(1024 * 1024):
-                if chunk:
-                    f.write(chunk)
-
-        print("Download complete.")
 
 class NGramModel:
     def __init__(self, n=3):
@@ -38,26 +22,24 @@ class NGramModel:
         text = re.sub(r"[^\w\s]", "", text)
         return text.split()
     
-    def train_from_file(self, file_path, limit=None):
-        from collections import defaultdict, Counter
-
+    def train_from_file(self, file_path):
         self.ngrams = defaultdict(Counter)
         self.context_counts = Counter()
 
         with open(file_path, "r", encoding="utf-8") as f:
-            text = f.read()   # 🔥 read FULL text
+            for i, line in enumerate(f):
+                tokens = self.preprocess(line)
 
-        tokens = self.preprocess(text)
+                for j in range(len(tokens) - self.n + 1):
+                    context = tuple(tokens[j:j+self.n-1])
+                    word = tokens[j+self.n-1]
 
-        for i in range(len(tokens) - self.n + 1):
-            context = tuple(tokens[i:i+self.n-1])
-            word = tokens[i+self.n-1]
+                    self.ngrams[context][word] += 1
+                    self.context_counts[context] += 1
 
-            self.ngrams[context][word] += 1
-            self.context_counts[context] += 1
+                if i % 1000 == 0:
+                    print(f"Processed {i} lines...")
 
-            if i % 10000 == 0:
-                print(f"Processed {i} tokens...")
         print("Total contexts learned:", len(self.ngrams))
 
     def save(self, path="model.pkl"):
@@ -85,20 +67,18 @@ class NGramModel:
 model = NGramModel(3)
 
 # 🔥 FORCE retrain
-download_dataset()
-with open("dataset.txt", "r", encoding="utf-8", errors="ignore") as f:
+with open(DATASET_PATH, "r", encoding="utf-8", errors="ignore") as f:
     sample = f.read(500)
     print("DATA SAMPLE:", sample[:200])
 print("Training model...")
-model.train_from_file("dataset.txt", limit=20000)
+model.train_from_file(DATASET_PATH, limit=20000)
 model.save("model.pkl")
 
 # if os.path.exists("model.pkl"):
 #     model.load("model.pkl")
 # else:
-#     download_dataset()
 #     print("Training model...")
-#     model.train_from_file("dataset.txt", limit=20000)  # limit for speed
+#     model.train_from_file(DATASET_PATH, limit=20000)  # limit for speed
 #     model.save("model.pkl")
 
 @app.route("/")
