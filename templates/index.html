@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Next Word Predictor</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            margin-top: 100px;
+        }
+        input {
+            width: 400px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .suggestions {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>AI Next Word Predictor</h1>
+
+    <input type="text" id="inputBox" placeholder="Type a sentence..." onkeyup="getPrediction()">
+
+    <div class="suggestions" id="result"></div>
+
+    <script>
+        async function getPrediction() {
+            const text = document.getElementById("inputBox").value;
+
+            const response = await fetch("/predict", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ text: text })
+            });
+
+            const data = await response.json();
+
+            document.getElementById("result").innerHTML =
+                data.map(word => `<div>${word}</div>`).join("");
+        }
+    </script>
+
+</body>
+</html>
