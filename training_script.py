@@ -19,6 +19,7 @@ class NGramModel:
 
         with open(file_path, "r", encoding="utf-8") as f:
             for i, line in enumerate(f):
+                if i > 20000: break
                 tokens = self.preprocess(line)
 
                 for j in range(len(tokens) - self.n + 1):
