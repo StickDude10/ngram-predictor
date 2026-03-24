@@ -1,26 +1,18 @@
-import re
 import pickle
 from collections import defaultdict, Counter
+from utils import preprocess
 
 class NGramModel:
     def __init__(self, n=3):
         self.n = n
         self.ngrams = defaultdict(Counter)
         self.context_counts = Counter()
-
-    def preprocess(self, text):
-        text = text.lower()
-        text = re.sub(r"[^a-zA-Z\s]", "", text)
-        return text.split()
     
-    def train_from_file(self, file_path):
-        self.ngrams = defaultdict(Counter)
-        self.context_counts = Counter()
-
+    def train_from_file(self, file_path):        
         with open(file_path, "r", encoding="utf-8") as f:
             for i, line in enumerate(f):
-                if i > 20000: break
-                tokens = self.preprocess(line)
+                if i > 20000: break # Limit dataset size for upload
+                tokens = preprocess(line)
 
                 for j in range(len(tokens) - self.n + 1):
                     context = tuple(tokens[j:j+self.n-1])

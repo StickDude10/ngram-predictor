@@ -1,8 +1,7 @@
 import os
-import re
 import pickle
-from collections import defaultdict, Counter
 from flask import Flask, render_template, request, jsonify
+from utils import preprocess
 
 app = Flask(__name__)
 
@@ -13,14 +12,9 @@ class NGramModel:
     def load(self, path="model.pkl"):
         with open(path, "rb") as f:
             self.ngrams, self.context_counts = pickle.load(f)
-    
-    def preprocess(self, text):
-        text = text.lower()
-        text = re.sub(r"[^a-zA-Z\s]", "", text)
-        return text.split()
 
     def predict(self, text, top_k=5):
-        tokens = self.preprocess(text)
+        tokens = preprocess(text)
 
         if len(tokens) < self.n-1:
             return []
