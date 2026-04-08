@@ -31,7 +31,7 @@ class NGramModel:
             pickle.dump((self.ngrams, self.context_counts), f)
 
 
-# 🔥 TRAIN
+# Train Model
 model = NGramModel(3)
 
 model.train_from_file("dataset.txt")
